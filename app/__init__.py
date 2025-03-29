@@ -2,7 +2,6 @@ from flask import Flask
 from flask_jwt_extended import JWTManager
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from flask_restx import Api
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from redis import Redis
@@ -11,14 +10,18 @@ from prometheus_client import Counter, Histogram
 import os
 from dotenv import load_dotenv
 
+import werkzeug
+if not hasattr(werkzeug, '__version__'):
+    werkzeug.__version__ = "2.2.2"
+
 load_dotenv()
 
 app = Flask(__name__)
 
 # تنظیمات پایگاه داده
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://postgres:postgres@db:5432/exercise_db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
+app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'your-secret-key-here')
 
 # تنظیم SQLAlchemy
 db = SQLAlchemy(app)
@@ -30,10 +33,10 @@ migrate = Migrate(app, db)
 jwt = JWTManager(app)
 
 # تنظیم Redis
-redis_client = Redis.from_url(os.getenv('REDIS_URL'))
+redis_client = Redis.from_url(os.getenv('REDIS_URL', 'redis://redis:6379/0'))
 
 # تنظیم Elasticsearch
-es = Elasticsearch([os.getenv('ELASTICSEARCH_URL')])
+es = Elasticsearch([os.getenv('ELASTICSEARCH_URL', 'http://es:9200')])
 
 # تنظیم Rate Limiter
 limiter = Limiter(
@@ -46,16 +49,18 @@ limiter = Limiter(
 request_count = Counter('http_requests_total', 'Total HTTP requests')
 request_latency = Histogram('http_request_duration_seconds', 'HTTP request latency')
 
-# تنظیم API
+# Import routes after all configurations
+from app.routes import exercise_routes, auth_routes
+
+# تنظیم API بعد از import کردن routes
+from flask_restx import Api
 api = Api(
     app,
     version='1.0',
     title='Exercise API',
-    description='API for managing exercises'
+    description='API for managing exercises',
+    doc='/api/docs'
 )
-
-# Import routes
-from app.routes import exercise_routes, auth_routes
 
 if __name__ == '__main__':
     app.run(debug=True) 

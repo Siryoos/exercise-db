@@ -1,4 +1,4 @@
-from flask import request
+from flask import request, jsonify
 from flask_restx import Resource, fields
 from app import api, limiter
 from app.models.models import Exercise, Muscle, ExerciseMuscle, ExerciseInstruction, ExerciseImage
@@ -43,7 +43,9 @@ exercise_model = api.model('Exercise', {
 engine = create_engine(os.getenv('DATABASE_URL'))
 session = Session(engine)
 
-@api.route('/exercises')
+ns = api.namespace('api/exercises', description='Exercise operations')
+
+@ns.route('/')
 class ExerciseList(Resource):
     @limiter.limit("5 per minute")
     @cache_response(expire_time=300)  # کش برای 5 دقیقه
@@ -51,7 +53,7 @@ class ExerciseList(Resource):
     def get(self):
         """دریافت لیست تمام تمرین‌ها"""
         exercises = session.query(Exercise).all()
-        return exercises
+        return jsonify([exercise.to_dict() for exercise in exercises])
 
     @api.expect(exercise_model)
     @api.marshal_with(exercise_model)
@@ -70,14 +72,14 @@ class ExerciseList(Resource):
         session.commit()
         return exercise, 201
 
-@api.route('/exercises/<int:id>')
+@ns.route('/<string:id>')
 class ExerciseDetail(Resource):
     @cache_response(expire_time=300)
     @api.marshal_with(exercise_model)
     def get(self, id):
         """دریافت جزئیات یک تمرین خاص"""
         exercise = session.query(Exercise).get_or_404(id)
-        return exercise
+        return jsonify(exercise.to_dict())
 
     @api.expect(exercise_model)
     @api.marshal_with(exercise_model)

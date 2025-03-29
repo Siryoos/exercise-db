@@ -2,9 +2,6 @@ services:
   web:
     build: .
     container_name: exercise_web
-    command: >
-      sh -c "flask db upgrade &&
-             gunicorn --bind 0.0.0.0:5000 'app:app'"
     volumes:
       - .:/app
     ports:
@@ -14,6 +11,7 @@ services:
     environment:
       - FLASK_ENV=development
       - FLASK_APP=app
+      - PYTHONPATH=/app
     depends_on:
       db:
         condition: service_healthy

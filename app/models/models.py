@@ -3,25 +3,43 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import os
+from app import db
 
 Base = declarative_base()
 
-class Exercise(Base):
+class Exercise(db.Model):
     __tablename__ = 'exercises'
-    
-    id = Column(Integer, primary_key=True)
-    name = Column(String(255), nullable=False)
-    force = Column(String(50))
-    level = Column(String(50), nullable=False)
-    mechanic = Column(String(50))
-    equipment = Column(String(100))
-    category = Column(String(100), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    muscles = relationship('ExerciseMuscle', back_populates='exercise')
-    instructions = relationship('ExerciseInstruction', back_populates='exercise')
-    images = relationship('ExerciseImage', back_populates='exercise')
+
+    id = db.Column(db.String(100), primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    force = db.Column(db.String(50), nullable=True)
+    level = db.Column(db.String(50), nullable=False)
+    mechanic = db.Column(db.String(50), nullable=True)
+    equipment = db.Column(db.String(50), nullable=True)
+    category = db.Column(db.String(50), nullable=False)
+    primary_muscles = db.Column(db.JSON, nullable=False)
+    secondary_muscles = db.Column(db.JSON, nullable=False)
+    instructions = db.Column(db.JSON, nullable=False)
+    images = db.Column(db.JSON, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'force': self.force,
+            'level': self.level,
+            'mechanic': self.mechanic,
+            'equipment': self.equipment,
+            'category': self.category,
+            'primaryMuscles': self.primary_muscles,
+            'secondaryMuscles': self.secondary_muscles,
+            'instructions': self.instructions,
+            'images': self.images,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }
 
 class Muscle(Base):
     __tablename__ = 'muscles'
