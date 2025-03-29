@@ -3,6 +3,11 @@ from bs4 import BeautifulSoup
 import json
 import os
 from tqdm import tqdm
+from fastapi import FastAPI, BackgroundTasks
+from typing import List, Optional
+import uvicorn
+
+app = FastAPI(title="Exercise Crawler API")
 
 class ExerciseCrawler(Crawler):
     def __init__(self):
@@ -27,7 +32,7 @@ class ExerciseCrawler(Crawler):
         self.exercises.append(exercise)
         return exercise
 
-    def crawl(self):
+    async def crawl(self):
         """شروع خزش از صفحه اصلی"""
         # دریافت لیست تمرین‌ها
         response = self.get(self.base_url)
@@ -40,9 +45,9 @@ class ExerciseCrawler(Crawler):
             self.get(exercise_url, callback=self.parse_exercise)
 
         # ذخیره نتایج
-        self.save_results()
+        await self.save_results()
 
-    def save_results(self):
+    async def save_results(self):
         """ذخیره نتایج در فایل JSON"""
         if not os.path.exists('dist'):
             os.makedirs('dist')
@@ -50,6 +55,27 @@ class ExerciseCrawler(Crawler):
         with open('dist/exercises.json', 'w', encoding='utf-8') as f:
             json.dump(self.exercises, f, ensure_ascii=False, indent=2)
 
-if __name__ == '__main__':
-    crawler = ExerciseCrawler()
-    crawler.crawl() 
+crawler = ExerciseCrawler()
+
+@app.get("/")
+async def read_root():
+    return {"message": "Exercise Crawler API"}
+
+@app.post("/crawl")
+async def start_crawl(background_tasks: BackgroundTasks):
+    """شروع عملیات خزش در پس‌زمینه"""
+    background_tasks.add_task(crawler.crawl)
+    return {"message": "Crawling started in background"}
+
+@app.get("/exercises")
+async def get_exercises():
+    """دریافت لیست تمرین‌های ذخیره شده"""
+    try:
+        with open('dist/exercises.json', 'r', encoding='utf-8') as f:
+            exercises = json.load(f)
+        return exercises
+    except FileNotFoundError:
+        return {"message": "No exercises found. Start crawling first."}
+
+if __name__ == "__main__":
+    uvicorn.run("crawler:app", host="0.0.0.0", port=8000, reload=True) 

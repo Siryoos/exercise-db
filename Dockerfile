@@ -23,5 +23,8 @@ COPY . .
 # Create output directory
 RUN mkdir -p dist
 
-# Run the crawler
-CMD ["python", "crawler.py"] 
+# Expose the port
+EXPOSE 8000
+
+# Run the FastAPI application
+CMD ["uvicorn", "crawler:app", "--host", "0.0.0.0", "--port", "8000"] 
