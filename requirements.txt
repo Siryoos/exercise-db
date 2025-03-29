@@ -13,10 +13,11 @@ pytest==7.4.2
 locust==2.16.1
 gunicorn==21.2.0
 Werkzeug==2.0.2
-crawl4ai==0.5.0.post8
-fastapi==0.109.2
-uvicorn==0.27.1
+crawl4ai==0.3.0
+fastapi==0.104.1
+uvicorn==0.24.0
 beautifulsoup4==4.12.2
 requests==2.31.0
 python-dotenv==1.0.0
-tqdm==4.66.1 
+tqdm==4.66.1
+aiohttp==3.9.1 

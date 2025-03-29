@@ -1,4 +1,4 @@
-from crawl4ai import Crawler
+from crawl4ai import AsyncCrawler
 from bs4 import BeautifulSoup
 import json
 import os
@@ -9,13 +9,13 @@ import uvicorn
 
 app = FastAPI(title="Exercise Crawler API")
 
-class ExerciseCrawler(Crawler):
+class ExerciseCrawler(AsyncCrawler):
     def __init__(self):
         super().__init__()
         self.base_url = "https://www.bodybuilding.com/exercises"
         self.exercises = []
 
-    def parse_exercise(self, response):
+    async def parse_exercise(self, response):
         """پردازش صفحه هر تمرین"""
         soup = BeautifulSoup(response.text, 'html.parser')
         
@@ -35,14 +35,14 @@ class ExerciseCrawler(Crawler):
     async def crawl(self):
         """شروع خزش از صفحه اصلی"""
         # دریافت لیست تمرین‌ها
-        response = self.get(self.base_url)
+        response = await self.get(self.base_url)
         soup = BeautifulSoup(response.text, 'html.parser')
         exercise_links = soup.select('a.ExerciseCard')
 
         # خزش هر تمرین
         for link in tqdm(exercise_links, desc="Crawling exercises"):
             exercise_url = link['href']
-            self.get(exercise_url, callback=self.parse_exercise)
+            await self.get(exercise_url, callback=self.parse_exercise)
 
         # ذخیره نتایج
         await self.save_results()
