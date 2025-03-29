@@ -3,6 +3,8 @@ from flask_jwt_extended import JWTManager
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_restx import Api
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 from redis import Redis
 from elasticsearch import Elasticsearch
 from prometheus_client import Counter, Histogram
@@ -12,7 +14,17 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
+
+# تنظیمات پایگاه داده
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
+
+# تنظیم SQLAlchemy
+db = SQLAlchemy(app)
+
+# تنظیم Flask-Migrate
+migrate = Migrate(app, db)
 
 # تنظیم JWT
 jwt = JWTManager(app)

@@ -25,7 +25,7 @@
 
 1. کلون کردن مخزن:
 ```bash
-git clone https://github.com/yourusername/exercise-db.git
+git clone https://github.com/siryoos/exercise-db.git
 cd exercise-db
 ```
 

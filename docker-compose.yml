@@ -1,10 +1,10 @@
-version: '3.8'
-
 services:
   web:
     build: .
     container_name: exercise_web
-    command: gunicorn --bind 0.0.0.0:5000 app:app
+    command: >
+      sh -c "flask db upgrade &&
+             gunicorn --bind 0.0.0.0:5000 'app:app'"
     volumes:
       - .:/app
     ports:
@@ -12,11 +12,15 @@ services:
     env_file:
       - .env
     environment:
-      - FLASK_ENV=development # Override for development convenience
+      - FLASK_ENV=development
+      - FLASK_APP=app
     depends_on:
-      - db
-      - redis
-      - es
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      es:
+        condition: service_healthy
 
   db:
     image: postgres:15-alpine
@@ -29,6 +33,11 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:7-alpine
@@ -43,13 +52,18 @@ services:
     container_name: exercise_es
     environment:
       - discovery.type=single-node
-      - xpack.security.enabled=false # Disable security for simplicity (NOT recommended for production)
-      - ES_JAVA_OPTS=-Xms512m -Xmx512m # Adjust memory limits as needed
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
     ports:
       - "9200:9200"
       - "9300:9300"
     volumes:
       - es_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -vq '\"status\":\"red\"'"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
 
 volumes:
   postgres_data:
