@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exercise Crawler</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Exercise Crawler</h1>
+        <p>Crawl and analyze exercises from virtuagym.com</p>
+        
+        <div class="task-selector">
+            <h2>Select Task</h2>
+            <div class="task-options">
+                <div class="task-option" data-task="main">
+                    <h3>Categories</h3>
+                    <p>Get all exercise categories</p>
+                </div>
+                <div class="task-option" data-task="category">
+                    <h3>Category</h3>
+                    <p>Get exercises in a category</p>
+                </div>
+                <div class="task-option" data-task="exercise">
+                    <h3>Exercise</h3>
+                    <p>Get exercise details</p>
+                </div>
+                <div class="task-option" data-task="all">
+                    <h3>All</h3>
+                    <p>Crawl all categories and exercises</p>
+                </div>
+            </div>
+        </div>
+        
+        <div id="url-input" class="hidden">
+            <h2>Enter URL</h2>
+            <input type="text" id="url" placeholder="e.g., /exercise/123 or category/456">
+        </div>
+        
+        <div class="options">
+            <label>
+                <input type="checkbox" id="use-cache" checked>
+                Use cache
+            </label>
+        </div>
+        
+        <button id="start-crawl" class="btn">Start Crawling</button>
+        
+        <div id="loading" class="hidden">
+            <div class="loader"></div>
+            <p>Crawling in progress...</p>
+        </div>
+        
+        <div id="results" class="hidden">
+            <h2>Results</h2>
+            <p id="result-summary"></p>
+            <button id="view-details" class="btn">View Details</button>
+            <button id="clear-results" class="btn">Clear</button>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let selectedTask = 'main';
+            
+            // Task selection
+            document.querySelectorAll('.task-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    document.querySelectorAll('.task-option').forEach(opt => opt.classList.remove('selected'));
+                    this.classList.add('selected');
+                    selectedTask = this.getAttribute('data-task');
+                    
+                    // Show/hide URL input based on task
+                    if (selectedTask === 'category' || selectedTask === 'exercise') {
+                        document.getElementById('url-input').classList.remove('hidden');
+                    } else {
+                        document.getElementById('url-input').classList.add('hidden');
+                    }
+                });
+            });
+            
+            // Select main task by default
+            document.querySelector('.task-option[data-task="main"]').classList.add('selected');
+            
+            // Start crawling
+            document.getElementById('start-crawl').addEventListener('click', async function() {
+                const urlInput = document.getElementById('url');
+                const useCache = document.getElementById('use-cache').checked;
+                
+                // Validate URL if needed
+                if ((selectedTask === 'category' || selectedTask === 'exercise') && !urlInput.value) {
+                    alert('Please enter a URL');
+                    return;
+                }
+                
+                // Show loading
+                document.getElementById('loading').classList.remove('hidden');
+                document.getElementById('results').classList.add('hidden');
+                
+                try {
+                    // Call API
+                    const response = await fetch('/api/crawl', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            task: selectedTask,
+                            url: urlInput.value,
+                            use_cache: useCache
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    // Store result in localStorage for viewing on results page
+                    localStorage.setItem('crawlResult', JSON.stringify(data));
+                    
+                    // Update summary
+                    const resultSummary = document.getElementById('result-summary');
+                    if (data.success) {
+                        const fromCache = data.from_cache ? '(from cache)' : '';
+                        const result = data.result;
+                        
+                        if (selectedTask === 'main') {
+                            resultSummary.textContent = `Found ${result.count} categories ${fromCache}`;
+                        } else if (selectedTask === 'category') {
+                            resultSummary.textContent = `Found ${result.count} exercises in category ${fromCache}`;
+                        } else if (selectedTask === 'exercise') {
+                            resultSummary.textContent = `Retrieved exercise details ${fromCache}`;
+                        } else if (selectedTask === 'all') {
+                            resultSummary.textContent = `Crawled ${result.categories.length} categories ${fromCache}`;
+                        }
+                    } else {
+                        resultSummary.textContent = `Error: ${data.result.error}`;
+                    }
+                    
+                    // Show results
+                    document.getElementById('results').classList.remove('hidden');
+                    
+                } catch (error) {
+                    console.error('Error:', error);
+                    document.getElementById('result-summary').textContent = `Error: ${error.message}`;
+                    document.getElementById('results').classList.remove('hidden');
+                } finally {
+                    document.getElementById('loading').classList.add('hidden');
+                }
+            });
+            
+            // View details
+            document.getElementById('view-details').addEventListener('click', function() {
+                window.location.href = '/results';
+            });
+            
+            // Clear results
+            document.getElementById('clear-results').addEventListener('click', function() {
+                document.getElementById('results').classList.add('hidden');
+                localStorage.removeItem('crawlResult');
+            });
+        });
+    </script>
+</body>
+</html>

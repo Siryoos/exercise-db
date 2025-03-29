@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crawl Results</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Crawl Results</h1>
+        <a href="/" class="back-link">← Back to Crawler</a>
+        
+        <div id="no-results" class="hidden">
+            <p>No results found. Please run a crawl first.</p>
+        </div>
+        
+        <div id="results-container">
+            <div class="result-header">
+                <h2 id="result-title">Results</h2>
+                <span id="cache-status"></span>
+            </div>
+            
+            <div class="result-actions">
+                <button id="download-json" class="btn">Download JSON</button>
+                <button id="clear-cache" class="btn">Clear Cache</button>
+            </div>
+            
+            <div id="result-content">
+                <pre id="json-display"></pre>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const resultData = localStorage.getItem('crawlResult');
+            
+            if (!resultData) {
+                document.getElementById('no-results').classList.remove('hidden');
+                document.getElementById('results-container').classList.add('hidden');
+                return;
+            }
+            
+            // Parse result data
+            const data = JSON.parse(resultData);
+            const result = data.result;
+            
+            // Set cache status
+            document.getElementById('cache-status').textContent = data.from_cache ? '(from cache)' : '';
+            
+            // Set result title
+            let title = 'Results';
+            if (result.categories) {
+                title = 'Categories';
+            } else if (result.exercises) {
+                title = 'Exercises';
+            } else if (result.details) {
+                title = 'Exercise Details';
+            }
+            document.getElementById('result-title').textContent = title;
+            
+            // Format JSON for display
+            const jsonDisplay = document.getElementById('json-display');
+            jsonDisplay.textContent = JSON.stringify(result, null, 2);
+            
+            // Download JSON
+            document.getElementById('download-json').addEventListener('click', function() {
+                const blob = new Blob([JSON.stringify(result, null, 2)], {type: 'application/json'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'crawl-result.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            });
+            
+            // Clear cache
+            document.getElementById('clear-cache').addEventListener('click', async function() {
+                try {
+                    const response = await fetch('/api/clear-cache', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({})
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        alert('Cache cleared successfully');
+                    } else {
+                        alert('Error clearing cache');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Error clearing cache: ' + error.message);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

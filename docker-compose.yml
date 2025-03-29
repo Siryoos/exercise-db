@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: exercise_web
+    command: gunicorn --bind 0.0.0.0:5000 app:app
+    volumes:
+      - .:/app
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    environment:
+      - FLASK_ENV=development # Override for development convenience
+    depends_on:
+      - db
+      - redis
+      - es
+
+  db:
+    image: postgres:15-alpine
+    container_name: exercise_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-exercise_db}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    container_name: exercise_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  es:
+    image: elasticsearch:8.9.0
+    container_name: exercise_es
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false # Disable security for simplicity (NOT recommended for production)
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m # Adjust memory limits as needed
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+
+volumes:
+  postgres_data:
+  redis_data:
+  es_data: 

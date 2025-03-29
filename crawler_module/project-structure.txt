@@ -1,0 +1,16 @@
+exercise_crawler/
+├── app.py              # Flask web application
+├── crawler/
+│   ├── __init__.py
+│   ├── exercise_crawler.py  # Crawl4AI implementation
+│   └── parser.py       # HTML parsing utilities
+├── static/
+│   └── style.css       # Simple styling
+├── templates/
+│   ├── index.html      # Main page
+│   └── results.html    # Results display
+├── utils/
+│   ├── __init__.py
+│   ├── cache.py        # Caching utilities
+│   └── logger.py       # Logging configuration
+└── requirements.txt    # Project dependencies
