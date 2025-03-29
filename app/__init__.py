@@ -50,7 +50,7 @@ request_count = Counter('http_requests_total', 'Total HTTP requests')
 request_latency = Histogram('http_request_duration_seconds', 'HTTP request latency')
 
 # Import routes after all configurations
-from app.routes import exercise_routes, auth_routes
+from app.routes import exercise_routes, auth_routes, health_routes
 
 # تنظیم API بعد از import کردن routes
 from flask_restx import Api
