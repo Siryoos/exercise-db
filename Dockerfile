@@ -29,30 +29,8 @@ COPY . .
 # Create migrations directory if it doesn't exist
 RUN mkdir -p migrations
 
-# Create an entrypoint script
-RUN echo '#!/bin/sh\n\
-set -e\n\
-\n\
-# Wait for database\n\
-echo "Waiting for database..."\n\
-sleep 5\n\
-\n\
-# Initialize migrations if not already initialized\n\
-if [ ! -d "migrations/versions" ]; then\n\
-    echo "Initializing migrations..."\n\
-    flask db init\n\
-fi\n\
-\n\
-# Run migrations\n\
-echo "Running database migrations..."\n\
-flask db stamp head || true\n\
-flask db migrate || true\n\
-flask db upgrade\n\
-\n\
-# Start the application\n\
-echo "Starting application..."\n\
-exec gunicorn --bind 0.0.0.0:5000 "app:app"' > /app/entrypoint.sh \
-    && chmod +x /app/entrypoint.sh
+# Copy the entrypoint script into the container
+COPY entrypoint.sh /app/entrypoint.sh
 
 # Expose the port the app runs on
 EXPOSE 5000
